@@ -76,7 +76,14 @@ services:
     environment:
       PDP_DATASET: ${DATASET:-station_daily}
     volumes:
-      - ${PDP_STORAGE}/data/published/${DATASET:-station_daily}:/dataset:ro
-      - ${PDP_WORKSPACE:?Set absolute PDP_WORKSPACE}:/workspace
+      - type: bind
+        source: ${PDP_STORAGE}/data/published/${DATASET:-station_daily}
+        target: /dataset
+        read_only: true
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${PDP_WORKSPACE:?Set absolute PDP_WORKSPACE}
+        target: /workspace
+        bind: {create_host_path: false}
     working_dir: /workspace
     command: [python, /app/tools/query.py]

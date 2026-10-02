@@ -24,8 +24,9 @@ Implemented and exercised:
   previous-week MAE was about 0.833, model MAE about 0.755 departures/hour. These
   small-fixture results are a workflow check, not a production accuracy claim.
 - A complete batch/replay/spatial run with container networking disabled.
-- An explicit full-month download and one isolated live GBFS fetch, which
-  published 267 station observations. No live schedule is enabled by default.
+- An explicit full-month download, then full and incremental processing of
+  149,077 June trips in an isolated container limited to two CPUs and 2 GB RAM.
+  One isolated live GBFS fetch published 267 station observations. No live schedule is enabled by default.
 - Ansible collection installation and syntax checks for both playbooks.
 
 Not locally exercised: installation on a fresh Ubuntu VM, actual SSH deployment
