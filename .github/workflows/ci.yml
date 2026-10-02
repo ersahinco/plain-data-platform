@@ -1,0 +1,65 @@
+name: Check and build
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78
+        with:
+          version: '0.11.8'
+          python-version: '3.12'
+      - run: uv sync --frozen --all-groups --python 3.12
+      - run: uv run --frozen --python 3.12 python -c "import duckdb; duckdb.connect().execute('INSTALL spatial')"
+      - run: make lint test
+      - name: Check Ansible syntax
+        run: |
+          uv run --frozen --python 3.12 --group ops ansible-galaxy collection install -r ops/ansible/requirements.yml
+          uv run --frozen --python 3.12 --group ops ansible-playbook -i ops/ansible/inventory.example.yml ops/ansible/bootstrap.yml --syntax-check
+          uv run --frozen --python 3.12 --group ops ansible-playbook -i ops/ansible/inventory.example.yml ops/ansible/deploy.yml --syntax-check
+      - name: Verify documented host commands, queue, permissions, restart and recovery
+        run: |
+          make bootstrap STORAGE="$RUNNER_TEMP/pdp"
+          make deploy
+          uv run --frozen --python 3.12 python tools/integration.py
+      - name: Container diagnostics
+        if: failure()
+        run: docker compose --env-file .env -f runtime/compose.yaml logs --tail 150
+      - name: Stop containers
+        if: always()
+        run: make stop
+  image:
+    if: github.event_name == 'push'
+    needs: check
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: build
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        with:
+          context: .
+          file: runtime/Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository }}:${{ github.sha }}
+          platforms: linux/amd64
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+      - name: Record immutable release reference
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
+        run: printf '%s\n' "$IMAGE" >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,106 @@
+- name: Prepare the single Ubuntu host
+  hosts: all
+  become: true
+  tasks:
+    - name: Require the supported operating system
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.distribution == 'Ubuntu'
+          - ansible_facts.distribution_version == '24.04'
+          - ansible_facts.architecture in ['x86_64', 'aarch64']
+          - pdp_secrets is match('^/[a-zA-Z0-9_/-]+$')
+    - name: Check for an existing Docker installation
+      ansible.builtin.command: docker version --format '{{ "{{.Server.Version}}" }}'
+      register: existing_docker
+      failed_when: false
+      changed_when: false
+    - name: Install Docker from its signed repository on a fresh host
+      when: existing_docker.rc != 0
+      block:
+        - name: Install OS utilities (Ubuntu security updates remain enabled)
+          ansible.builtin.apt:
+            name: [ca-certificates, python3, python3-apt, python3-debian, git, make]
+            update_cache: true
+        - name: Create keyring directory
+          ansible.builtin.file:
+            path: /etc/apt/keyrings
+            state: directory
+            mode: '0755'
+        - name: Install verified Docker signing key
+          ansible.builtin.get_url:
+            url: https://download.docker.com/linux/ubuntu/gpg
+            dest: /etc/apt/keyrings/docker.asc
+            checksum: sha256:1500c1f56fa9e26b9b8f42452a553675796ade0807cdce11975eb98170b3a570
+            mode: '0644'
+        - name: Configure Docker repository
+          ansible.builtin.deb822_repository:
+            name: docker
+            types: [deb]
+            uris: [https://download.docker.com/linux/ubuntu]
+            suites: [noble]
+            components: [stable]
+            architectures: ["{{ 'amd64' if ansible_facts.architecture == 'x86_64' else 'arm64' }}"]
+            signed_by: /etc/apt/keyrings/docker.asc
+        - name: Install pinned Docker packages
+          ansible.builtin.apt:
+            name:
+              - docker-ce=5:29.8.1-1~ubuntu.24.04~noble
+              - docker-ce-cli=5:29.8.1-1~ubuntu.24.04~noble
+              - containerd.io=2.3.6-1~ubuntu.24.04~noble
+              - docker-buildx-plugin=0.37.1-1~ubuntu.24.04~noble
+              - docker-compose-plugin=5.5.1-1~ubuntu.24.04~noble
+            update_cache: true
+    - name: Ensure deployment utilities exist also on hosts with Docker
+      ansible.builtin.apt:
+        name: [git, make, python3]
+        state: present
+    - name: Keep Docker running across host reboots
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+    - name: Verify Compose is available
+      ansible.builtin.command: docker compose version
+      changed_when: false
+    - name: Create service group
+      ansible.builtin.group:
+        name: plain-data
+        gid: '{{ pdp_gid }}'
+    - name: Create service user without a shell
+      ansible.builtin.user:
+        name: plain-data
+        uid: '{{ pdp_uid }}'
+        group: plain-data
+        shell: /usr/sbin/nologin
+        create_home: false
+    - name: Create persistent directories
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: directory
+        owner: '{{ pdp_uid }}'
+        group: '{{ pdp_gid }}'
+        mode: '0700'
+      loop:
+        - '{{ pdp_storage }}'
+        - '{{ pdp_storage }}/dagster'
+        - '{{ pdp_storage }}/data'
+        - '{{ pdp_storage }}/data/ingestion'
+        - '{{ pdp_storage }}/data/incoming'
+        - '{{ pdp_storage }}/data/published'
+        - '{{ pdp_storage }}/workspaces/operator'
+    - name: Create root-only backup and secret directories
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+      loop: ['{{ pdp_backups }}', '{{ pdp_secrets }}']
+    - name: Generate a restic password on the host only once
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -c
+          - "import os,secrets; p=os.open('{{ pdp_secrets }}/restic-password',os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600); os.write(p,(secrets.token_urlsafe(48)+'\n').encode()); os.close(p)"
+        creates: '{{ pdp_secrets }}/restic-password'
+      no_log: true

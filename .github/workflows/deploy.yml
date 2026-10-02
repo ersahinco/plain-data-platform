@@ -1,0 +1,55 @@
+name: Deploy reviewed release
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: Reviewed full 40-character Git commit SHA
+        required: true
+      image:
+        description: Matching ghcr.io image reference with sha256 digest
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    environment: production
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78
+        with:
+          version: '0.11.8'
+          python-version: '3.12'
+      - run: uv sync --frozen --python 3.12 --group ops
+      - name: Configure SSH and inventory
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+          REVISION: ${{ inputs.revision }}
+          IMAGE: ${{ inputs.image }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          python - <<'PY'
+          import json, os, pathlib
+          ssh = pathlib.Path.home()/'.ssh'
+          ssh.mkdir(mode=0o700, exist_ok=True)
+          for name, value in [('id_ed25519', 'SSH_KEY'), ('known_hosts', 'KNOWN_HOSTS')]:
+              path = ssh/name
+              path.write_text(os.environ[value]+'\n')
+              path.chmod(0o600)
+          config = {'all': {'hosts': {'platform': {
+              'ansible_host': os.environ['DEPLOY_HOST'], 'ansible_user': os.environ['DEPLOY_USER']}},
+              'vars': {'pdp_root': '/opt/plain-data-platform', 'pdp_storage': '/srv/plain-data-platform',
+              'pdp_backups': '/srv/plain-data-platform-backups', 'pdp_secrets': '/etc/plain-data-platform',
+              'pdp_uid': 10001, 'pdp_gid': 10001, 'pdp_revision': os.environ['REVISION'],
+              'pdp_image': os.environ['IMAGE'],
+              'pdp_repository': 'https://github.com/'+os.environ['REPOSITORY']+'.git'}}}
+          pathlib.Path('ops/ansible/inventory.yml').write_text(json.dumps(config))
+          PY
+      - run: uv run --frozen --python 3.12 --group ops ansible-galaxy collection install -r ops/ansible/requirements.yml
+      - run: uv run --frozen --python 3.12 --group ops ansible-playbook -i ops/ansible/inventory.yml ops/ansible/bootstrap.yml ops/ansible/deploy.yml

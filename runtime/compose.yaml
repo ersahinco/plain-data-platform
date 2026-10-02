@@ -1,0 +1,82 @@
+name: plain-data-platform
+x-app: &app
+  image: ${PDP_IMAGE:-plain-data-platform:dev}
+  build:
+    context: ..
+    dockerfile: runtime/Dockerfile
+  user: "${PDP_UID:-10001}:${PDP_GID:-10001}"
+  restart: unless-stopped
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  tmpfs: ["/tmp:size=512m,mode=1777"]
+  pids_limit: 256
+  cpus: 1
+  mem_limit: 768m
+  logging:
+    driver: json-file
+    options: {max-size: 10m, max-file: "3"}
+  environment: &environment
+    DAGSTER_HOME: /state
+    PDP_DATA_ROOT: /data
+    PDP_FIXTURES: /fixtures
+    DLT_TELEMETRY_ENABLED: "false"
+  volumes: &state
+    - ${PDP_STORAGE:?Set absolute PDP_STORAGE}/dagster:/state
+    - ./dagster.yaml:/state/dagster.yaml:ro
+    - ./workspace.yaml:/app/runtime/workspace.yaml:ro
+
+services:
+  code:
+    <<: *app
+    command: [dagster, api, grpc, -h, 0.0.0.0, -p, "4000", -m, pipelines.definitions]
+    mem_limit: 2g
+    cpus: 2
+    environment:
+      <<: *environment
+      PDP_CLIENT_IDENTIFIER: ${PDP_CLIENT_IDENTIFIER:-plain-data-platform}
+    volumes:
+      - ${PDP_STORAGE}/dagster:/state
+      - ./dagster.yaml:/state/dagster.yaml:ro
+      - ${PDP_STORAGE}/data:/data
+      - ../tests/fixtures:/fixtures:ro
+    healthcheck:
+      test: [CMD, dagster, api, grpc-health-check, -p, "4000"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    stop_grace_period: 45s
+  web:
+    <<: *app
+    command: [dagster-webserver, -h, 0.0.0.0, -p, "3000", -w, /app/runtime/workspace.yaml]
+    ports: ["127.0.0.1:${PDP_UI_PORT:-3000}:3000"]
+    depends_on:
+      code: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:3000/server_info')"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+  daemon:
+    <<: *app
+    command: [dagster-daemon, run, -w, /app/runtime/workspace.yaml]
+    depends_on:
+      code: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, dagster-daemon, liveness-check]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+  # One-shot readers have only one approved dataset, no state or credentials.
+  reader:
+    <<: *app
+    profiles: [tools]
+    restart: "no"
+    network_mode: none
+    environment:
+      PDP_DATASET: ${DATASET:-station_daily}
+    volumes:
+      - ${PDP_STORAGE}/data/published/${DATASET:-station_daily}:/dataset:ro
+      - ${PDP_WORKSPACE:?Set absolute PDP_WORKSPACE}:/workspace
+    working_dir: /workspace
+    command: [python, /app/tools/query.py]

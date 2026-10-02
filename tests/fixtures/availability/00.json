@@ -1,0 +1,146 @@
+{
+  "station_information": {
+    "last_updated": 1790929125,
+    "ttl": 15,
+    "version": "2.3",
+    "data": {
+      "stations": [
+        {
+          "station_id": "2270",
+          "name": "L\u00f8renporten",
+          "address": "L\u00f8renveien 63",
+          "cross_street": "p\u00e5 torget utenfor Parallell",
+          "lat": 59.928710966693274,
+          "lon": 10.799914801820819,
+          "is_virtual_station": false,
+          "capacity": 20,
+          "station_area": {
+            "type": "MultiPolygon",
+            "coordinates": [
+              [
+                [
+                  [
+                    10.799540974548535,
+                    59.928974308641386
+                  ],
+                  [
+                    10.799527499545377,
+                    59.92842527958109
+                  ],
+                  [
+                    10.800414454904313,
+                    59.92843215464555
+                  ],
+                  [
+                    10.800462220294747,
+                    59.928953060626355
+                  ],
+                  [
+                    10.799540974548535,
+                    59.928974308641386
+                  ]
+                ]
+              ]
+            ]
+          },
+          "rental_uris": {
+            "android": "oslobysykkel://stations/2270",
+            "ios": "oslobysykkel://stations/2270"
+          }
+        },
+        {
+          "station_id": "1023",
+          "name": "Professor Aschehougs plass",
+          "address": "Professor Aschehougs plass",
+          "cross_street": "ved Kristian IVs gate",
+          "lat": 59.9147672,
+          "lon": 10.740971,
+          "is_virtual_station": false,
+          "capacity": 15,
+          "station_area": {
+            "type": "MultiPolygon",
+            "coordinates": [
+              [
+                [
+                  [
+                    10.740732133336422,
+                    59.91481839132297
+                  ],
+                  [
+                    10.740777180744601,
+                    59.91472059520445
+                  ],
+                  [
+                    10.741297401641077,
+                    59.9147557722302
+                  ],
+                  [
+                    10.741262080276186,
+                    59.914847323418165
+                  ],
+                  [
+                    10.740732133336422,
+                    59.91481839132297
+                  ]
+                ]
+              ]
+            ]
+          },
+          "rental_uris": {
+            "android": "oslobysykkel://stations/1023",
+            "ios": "oslobysykkel://stations/1023"
+          }
+        }
+      ]
+    }
+  },
+  "station_status": {
+    "last_updated": 1790929125,
+    "ttl": 15,
+    "version": "2.3",
+    "data": {
+      "stations": [
+        {
+          "station_id": "2270",
+          "is_installed": true,
+          "is_renting": true,
+          "is_returning": true,
+          "last_reported": 1790929133,
+          "num_vehicles_available": 4,
+          "num_bikes_available": 4,
+          "num_docks_available": 15,
+          "vehicle_types_available": [
+            {
+              "vehicle_type_id": "bike",
+              "count": 4
+            },
+            {
+              "vehicle_type_id": "ebike",
+              "count": 0
+            }
+          ]
+        },
+        {
+          "station_id": "1023",
+          "is_installed": true,
+          "is_renting": true,
+          "is_returning": true,
+          "last_reported": 1790929133,
+          "num_vehicles_available": 13,
+          "num_bikes_available": 13,
+          "num_docks_available": 0,
+          "vehicle_types_available": [
+            {
+              "vehicle_type_id": "bike",
+              "count": 7
+            },
+            {
+              "vehicle_type_id": "ebike",
+              "count": 6
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

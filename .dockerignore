@@ -1,0 +1,12 @@
+.git
+.venv
+.env*
+**/__pycache__
+.pytest_cache
+.ruff_cache
+tests/fixtures
+data
+backups
+secrets
+recovery
+ops/ansible/inventory.yml

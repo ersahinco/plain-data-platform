@@ -1,0 +1,61 @@
+{
+  "provider": "Oslo City Bike / Urban Sharing",
+  "license": "NLOD-2.0",
+  "license_url": "https://data.norge.no/nlod/en/2.0",
+  "station_ids": [
+    "1023",
+    "2270"
+  ],
+  "selection": "All trip rows with either endpoint in station_ids, for complete UTC months June and July 2025. No trip deduplication. Every recorded station information/status row for those IDs. Trip demand exercises use only the selected origin stations.",
+  "sources": [
+    {
+      "url": "https://data.urbansharing.com/oslobysykkel.no/trips/v1/2025/06.csv",
+      "sha256": "8dcfd84ebfae929b02aeefcf355bd38d5eb194171f98a04a7ee223048bac4157",
+      "retrieved_at": "2026-10-02T08:18:54.240111+00:00",
+      "rows": 149077
+    },
+    {
+      "url": "https://data.urbansharing.com/oslobysykkel.no/trips/v1/2025/07.csv",
+      "sha256": "83dcf2efd70ea2d5f1258453572f2c493dc06bb2a241f6b553a5f842570757e2",
+      "retrieved_at": "2026-10-02T08:18:55.989548+00:00",
+      "rows": 145568
+    },
+    {
+      "url": "https://gbfs.urbansharing.com/oslobysykkel.no/station_information.json",
+      "sha256": "badecef351faae29cbbce9bb5b117f29b5ba68a3ae39f2382bf45fc6daea0e7d",
+      "retrieved_at": "2026-10-02T08:18:56.400447+00:00"
+    },
+    {
+      "url": "https://gbfs.urbansharing.com/oslobysykkel.no/station_status.json",
+      "sha256": "abd7ea02b74b72a4a4af171aaef3d956c2201672c8dc157460b6165a194c470a",
+      "retrieved_at": "2026-10-02T08:18:56.509316+00:00"
+    },
+    {
+      "url": "https://gbfs.urbansharing.com/oslobysykkel.no/station_information.json",
+      "sha256": "2806f76d83b5a4fe11cc094be7b0ef421c9b913ea44f97b0b2d6541172f1da49",
+      "retrieved_at": "2026-10-02T08:19:12.655856+00:00"
+    },
+    {
+      "url": "https://gbfs.urbansharing.com/oslobysykkel.no/station_status.json",
+      "sha256": "965390a68ce12791ad490607f5c8faaebd931d7360e31d14e27f26a526170c07",
+      "retrieved_at": "2026-10-02T08:19:12.776381+00:00"
+    },
+    {
+      "url": "https://gbfs.urbansharing.com/oslobysykkel.no/station_information.json",
+      "sha256": "042ca3bb4ac7e4996a1e0b8680182cfa6ebb4dbb8fb775e6d794a6b40a8c12df",
+      "retrieved_at": "2026-10-02T08:19:28.917014+00:00"
+    },
+    {
+      "url": "https://gbfs.urbansharing.com/oslobysykkel.no/station_status.json",
+      "sha256": "b6382cbce9380c5fd188013231c7d65dbdb1f2a49af6e55302b525bf77736295",
+      "retrieved_at": "2026-10-02T08:19:29.035639+00:00"
+    }
+  ],
+  "files": {
+    "availability/00.json": "bbc9c0e81f24191f1607c7c06584894b5ed43e012846c3de3706d7f187f5b10b",
+    "availability/01.json": "ed17dfd75cc6599efe797afd4e482bdf806303fb80593d8d5b0240473c23eeb4",
+    "availability/02.json": "c5cb41cad624a46b3d8f1708f8e2e4af8143a7dfcb3da6c1060e9bbdb18b3836",
+    "trips/2025-06.csv": "952f98a30d08567a7dbed040541ea7f7a2e15da186d6f1edbbe10c2c9c79330b",
+    "trips/2025-07.csv": "97dd0228d830589a141b13cf1185c4c3ba20739c52ee68f2f1da3b0af2e87d21"
+  }
+}

@@ -1,0 +1,27 @@
+storage:
+  sqlite:
+    base_dir: /state/storage
+run_coordinator:
+  module: dagster.core.run_coordinator
+  class: QueuedRunCoordinator
+  config:
+    max_concurrent_runs: 1
+    dequeue_interval_seconds: 2
+run_launcher:
+  module: dagster.core.launcher
+  class: DefaultRunLauncher
+compute_logs:
+  module: dagster.core.storage.local_compute_log_manager
+  class: LocalComputeLogManager
+  config:
+    base_dir: /state/logs
+local_artifact_storage:
+  module: dagster.core.storage.root
+  class: LocalArtifactStorage
+  config:
+    base_dir: /state/artifacts
+run_monitoring:
+  enabled: true
+  max_runtime_seconds: 1800
+telemetry:
+  enabled: false

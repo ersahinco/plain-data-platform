@@ -1,0 +1,42 @@
+- name: Deploy a reviewed commit and immutable image
+  hosts: all
+  become: true
+  tasks:
+    - name: Require immutable release references and absolute storage paths
+      ansible.builtin.assert:
+        that:
+          - pdp_revision is match('^[a-f0-9]{40}$')
+          - pdp_image is match('^ghcr.io/[a-z0-9_./-]+@sha256:[a-f0-9]{64}$')
+          - pdp_root is match('^/[a-zA-Z0-9_/-]+$')
+          - pdp_storage is match('^/[a-zA-Z0-9_/-]+$')
+          - pdp_backups is match('^/[a-zA-Z0-9_/-]+$')
+          - pdp_secrets is match('^/[a-zA-Z0-9_/-]+$')
+    - name: Check out the reviewed repository revision
+      ansible.builtin.git:
+        repo: '{{ pdp_repository }}'
+        dest: '{{ pdp_root }}'
+        version: '{{ pdp_revision }}'
+        force: false
+    - name: Write host configuration with secret paths only
+      ansible.builtin.copy:
+        dest: '{{ pdp_root }}/.env'
+        owner: root
+        group: root
+        mode: '0600'
+        content: |
+          PDP_STORAGE={{ pdp_storage }}
+          PDP_WORKSPACE={{ pdp_storage }}/workspaces/operator
+          PDP_UID={{ pdp_uid }}
+          PDP_GID={{ pdp_gid }}
+          PDP_IMAGE={{ pdp_image }}
+          PDP_BACKUPS={{ pdp_backups }}
+          PDP_RESTIC_PASSWORD_FILE={{ pdp_secrets }}/restic-password
+          PDP_UI_PORT=3000
+    - name: Pull the immutable application image
+      community.docker.docker_image_pull:
+        name: '{{ pdp_image }}'
+    - name: Drain workers and converge the Compose deployment
+      ansible.builtin.command:
+        argv: [python3, tools/host.py, deploy]
+        chdir: '{{ pdp_root }}'
+      changed_when: true

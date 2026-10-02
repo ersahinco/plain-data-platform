@@ -1,0 +1,16 @@
+all:
+  hosts:
+    platform:
+      ansible_host: 192.0.2.10
+      ansible_user: ubuntu
+  vars:
+    pdp_root: /opt/plain-data-platform
+    pdp_storage: /srv/plain-data-platform
+    pdp_backups: /srv/plain-data-platform-backups
+    pdp_secrets: /etc/plain-data-platform
+    pdp_uid: 10001
+    pdp_gid: 10001
+    pdp_repository: https://github.com/ersahinco/plain-data-platform.git
+    # Set both to the reviewed release; deploy refuses mutable image tags/revisions.
+    pdp_revision: REPLACE_WITH_40_CHARACTER_COMMIT_SHA
+    pdp_image: ghcr.io/ersahinco/plain-data-platform@sha256:REPLACE_WITH_DIGEST

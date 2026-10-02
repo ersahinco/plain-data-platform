@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.env
+.env.*
+!.env.example
+*.duckdb*
+*.sqlite*
+.dlt/
+data/
+backups/
+secrets/
+recovery/
+ops/ansible/inventory.yml
+.DS_Store
